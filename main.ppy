@@ -1,0 +1,78 @@
+import streamlit as st
+
+# Styling
+st.set_page_config(page_title="AI Construction Estimator", layout="wide")
+st.markdown("""
+    <style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #f4f4f4;
+    }
+    .stApp {
+        background-color: #ffffff;
+        color: #1e1e1e;
+    }
+    .main-title {
+        color: #004B23;
+        font-size: 36px;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="main-title">🏗️ AI Construction Bid Estimator</div>', unsafe_allow_html=True)
+
+# User Input
+with st.form("input_form"):
+    st.header("📋 Project Info")
+    project_name = st.text_input("Project Name")
+    email = st.text_input("Email for Estimate Delivery")
+    zip_code = st.text_input("Project ZIP Code")
+    project_type = st.selectbox("Project Type", ["Kitchen Remodel", "Bathroom Addition", "Basement Finish", "Full Home Build"])
+    sq_ft = st.number_input("Square Footage", step=50)
+    timeline = st.selectbox("Timeline", ["2 Weeks", "4 Weeks", "8+ Weeks"])
+    buffer = st.slider("Buffer for Waste (%)", 0, 30, 20)
+    labor_cost_input = st.checkbox("Use My Own Labor Rate")
+    labor_rate = st.number_input("Your Labor Rate per sq ft", value=40) if labor_cost_input else 50
+
+    submitted = st.form_submit_button("🔍 Generate Estimate")
+
+if submitted:
+    base_material_cost = sq_ft * 35
+    labor_cost = sq_ft * labor_rate
+    total_before_buffer = base_material_cost + (labor_cost if labor_cost_input else 0)
+    total_with_buffer = total_before_buffer * (1 + buffer / 100)
+
+    st.success("✅ Estimate Generated")
+
+    # Breakdown
+    st.subheader("💰 Cost Breakdown")
+    st.write(f"Base Material Estimate: **${base_material_cost:,.2f}**")
+    st.write(f"Labor Estimate: **${labor_cost:,.2f}**")
+    st.write(f"Buffer ({buffer}%): **${total_with_buffer - total_before_buffer:,.2f}**")
+    st.write(f"### 📦 **Total Estimate: ${total_with_buffer:,.2f}**")
+
+    # Materials Estimate
+    st.subheader("🧱 Material Breakdown")
+    lumber_2x4 = int(sq_ft * 0.25)
+    lumber_2x6 = int(sq_ft * 0.15)
+    nails = int(sq_ft * 30)
+    bolts = int(sq_ft * 2)
+    insulation = f"{int(sq_ft / 32)} batts"
+    sheetrock = int(sq_ft / 32)
+    roof_tiles = int(sq_ft / 10)
+
+    materials = {
+        "2x4 Lumber": (lumber_2x4, "Home Depot / Lowe’s / Local Mill"),
+        "2x6 Lumber": (lumber_2x6, "Home Depot / Lowe’s"),
+        "Nails": (nails, "Lowe’s / Ace Hardware"),
+        "Large Bolts": (bolts, "Home Depot / Fastenal"),
+        "Insulation (Batts)": (insulation, "Home Depot / Local Dealer"),
+        "Sheetrock (4x8)": (sheetrock, "Lowe’s / Home Depot"),
+        "Roof Tiles": (roof_tiles, "Local Roofing Supply / Home Depot")
+    }
+
+    st.table([
+        {"Material": k, "Quantity": v[0], "Source": v[1]}
+        for k, v in materials.items()
+    ])
